@@ -19,23 +19,24 @@ async function environmentSetup() {
 
     }
 
+    //client creating and init
     const client = Client.forTestnet()
     client.setOperator(myAccountId, myPrivateKey);
 
-    //Create keys
+    //generating keys
     const adminKey = PrivateKey.generate();
     const submitKey = PrivateKey.generate();
 
-    // Create a new topic
+    // topic creation
     let transaction = await new TopicCreateTransaction()
         .setAdminKey(adminKey)
         .setSubmitKey(submitKey)
-        .setTopicMemo("Hello World")
+        .setTopicMemo("issam's topic memo")
         .freezeWith(client);
 
-    //sign & execute
-    const sign1 = await transaction.sign(adminKey);
-    const sign2 = await sign1.sign(submitKey);
+    //Signing transaction and executing
+    const trxSignedByAdminKey = await transaction.sign(adminKey);
+    const trxSignedBySubmitKey = await trxSignedByAdminKey.sign(submitKey);
     const txId = await sign2.execute(client);
 
     const receipt = await txId.getReceipt(client);
