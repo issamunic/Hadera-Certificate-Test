@@ -35,49 +35,53 @@ async function environmentSetup() {
         .freezeWith(client);
 
     //Signing transaction and executing
-    const trxSignedByAdminKey = await transaction.sign(adminKey);
-    const trxSignedBySubmitKey = await trxSignedByAdminKey.sign(submitKey);
-    const txId = await sign2.execute(client);
+    let txSignedByAdminKey = await transaction.sign(adminKey);
+    let txSignedBySubmitKey = await txSignedByAdminKey.sign(submitKey);
+    const txCreateTopicSigned = await txSignedBySubmitKey.execute(client);
 
-    const receipt = await txId.getReceipt(client);
-    const topicId = receipt.topicId;
-    console.log(topicId);
+    const txReceipt = await txCreateTopicSigned.getReceipt(client);
+    const topicId = txReceipt.topicId;
+    console.log('------------------------------------');
+    console.log("topic ID: " + topicId);
+    console.log('------------------------------------');
 
-    // Query the topic info 
-    const topicInfo = await new TopicInfoQuery()
+    async function getMemo(topicId) {
+        const topic = await new TopicInfoQuery()
+            .setTopicId(topicId)
+            .execute(client);
+
+        console.log('------------------------------------');
+        console.log("Topic Memo:", topic.topicMemo);
+        console.log('------------------------------------');
+    }
+
+    // getting topic data
+    await getMemo(topicId)
+
+
+    // updating memo
+    let updateTx = await new TopicUpdateTransaction()
         .setTopicId(topicId)
-        .execute(client);
-
-    console.log("Topic Memo:", topicInfo.topicMemo);
-
-
-    // Update the topic memo
-    let updateTransaction = await new TopicUpdateTransaction()
-        .setTopicId(topicId)
-        .setTopicMemo("Bonjour Monde")
+        .setTopicMemo("new memo")
         .freezeWith(client);
 
-    //sign & execute
-    const sign3 = await updateTransaction.sign(adminKey);
-    const sign4 = await sign3.sign(submitKey);
-    const txId1 = await sign4.execute(client);
+    //Signing transaction and executing
+    txSignedByAdminKey = await updateTx.sign(adminKey);
+    txSignedBySubmitKey = await txSignedByAdminKey.sign(submitKey);
+    const txUpdateTopicSigned = await txSignedBySubmitKey.execute(client);
 
-    // Query the topic info 2
-    const topicInfo2 = await new TopicInfoQuery()
-        .setTopicId(topicId)
-        .execute(client);
 
-    console.log("Updated Topic Info:");
-    console.log("Topic Memo:", topicInfo2.topicMemo);
+    // getting topic data
+    await getMemo(topicId)
 
     // Submit a message to the topic
-    const messageTransactionId = await new TopicMessageSubmitTransaction()
+    const TxMessageId = await new TopicMessageSubmitTransaction()
         .setTopicId(topicId)
-        .setMessage("Hello, Fam!")
+        .setMessage("New Message!")
         .execute(client);
 
-    console.log("Message transaction ID:", messageTransactionId);
-    console.log("Message published:", "Hello, Hedera!");
+    console.log("Message transaction ID:", TxMessageId);
+    console.log("Message published");
 
 }
 environmentSetup().catch((error) => {
